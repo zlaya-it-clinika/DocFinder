@@ -130,6 +130,22 @@ class AnswerVerification(unittest.TestCase):
 
 
 class Formatting(unittest.TestCase):
+    def test_bare_clause_or_article_does_not_identify_the_document(self):
+        kb = knowledge_base()
+        lease = kb.by_number["А-08/2024"]
+        labor_code = next(doc for doc in kb.docs if doc.act == "ТК РФ" and doc.article == "70")
+        cases = (
+            (lease, "п. 3.1", "Плата указана в п. 3.1 [F1].", "А-08/2024"),
+            (labor_code, "ст. 70, ч. 3", "По ст. 70, ч. 3 трудовые правила применяются [F1].", "ТК РФ"),
+        )
+        for doc, path, raw, source_name in cases:
+            with self.subTest(path=path):
+                chunk = next(chunk for chunk in doc.chunks if chunk.path == path)
+                item = retrieval.ContextItem(label="F1", chunk=chunk, doc=doc)
+                self.assertIn(source_name, formatter.finalize(raw, {"F1": item}))
+                repeated = formatter.finalize(raw + " " + raw, {"F1": item})
+                self.assertEqual(repeated.count(source_name), 1)
+
     def test_labels_replaced(self):
         kb = knowledge_base()
         import retrieval

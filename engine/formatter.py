@@ -39,7 +39,7 @@ def citation_text(items: list[ContextItem], answer_low: str) -> str:
 
 def _mentioned(doc, answer_low: str) -> bool:
     if doc.category == "law":
-        return doc.act.lower() in answer_low or (doc.article and f"ст. {doc.article}" in answer_low)
+        return bool(doc.act and doc.act.lower() in answer_low)
     if doc.number and doc.number.lower() in answer_low:
         return True
     return doc.display_name.lower() in answer_low
@@ -47,6 +47,7 @@ def _mentioned(doc, answer_low: str) -> bool:
 
 def replace_labels(text: str, by_label: dict[str, ContextItem]) -> str:
     low = text.lower()
+    cited_documents: set[str] = set()
 
     def substitute(match: re.Match) -> str:
         items = [by_label[label] for label in labels_in(match.group(0)) if label in by_label]
@@ -54,8 +55,10 @@ def replace_labels(text: str, by_label: dict[str, ContextItem]) -> str:
             return ""
         # Ссылка уже написана словами прямо перед меткой - метку убираем
         before = text[max(0, match.start() - 80):match.start()].lower()
-        if all(short_path(item) and short_path(item).lower() in before for item in items):
+        if all((item.doc.doc_id in cited_documents or _mentioned(item.doc, low)) and short_path(item)
+               and short_path(item).lower() in before for item in items):
             return ""
+        cited_documents.update(item.doc.doc_id for item in items)
         return "(" + citation_text(items, low) + ")"
 
     replaced = LABEL_RE.sub(substitute, text)
