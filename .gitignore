@@ -8,6 +8,8 @@
 **/__pycache__/
 **/*.pyc
 **/node_modules/
-engine/dist/
+engine/dist/*
+!engine/dist/submission.zip
+engine/dist/_history/
 engine/test_out.txt
 *.log

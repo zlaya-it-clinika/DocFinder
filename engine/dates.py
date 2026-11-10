@@ -68,6 +68,9 @@ def event_period(question: str) -> tuple[date, date] | None:
     Возвращает (начало, конец) периода. Даты внутри номеров договоров («П-17/2024») не считаются.
     """
     cleaned = re.sub(r"[А-ЯA-Z]{1,3}-\d+[/-]\d{4}", " ", question)
+    # Год в названии редакции сам по себе не является датой события.
+    cleaned = re.sub(r"редакци[ияею]\s+(?:от\s+)?\d{4}\s*(?:год[ауы]?)?",
+                     " ", cleaned, flags=re.IGNORECASE)
     dates = find_dates(cleaned)
     if dates:
         day = dates[0][1]

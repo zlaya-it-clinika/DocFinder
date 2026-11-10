@@ -33,7 +33,14 @@ LEGAL_HINT = re.compile(
     r"договор|соглашен|закон|кодекс|стать|пункт|регламент|норм|прав|обязан|штраф|налог|ндс|ндфл|"
     r"трудов|работ|сотрудник|увольн|испытан|отпуск|зарплат|оплат|аренд|постав|претенз|гарант|пособи|"
     r"согласован|персональн|данн|ответствен|санкц|контрагент|юрист|суд|срок|можно ли|нужно ли|"
-    r"архив|оригинал|подпис|приказ|комплаенс|мрот|сверхуроч|выплат|компенсац|льгот", re.IGNORECASE)
+    r"архив|оригинал|подпис|приказ|комплаенс|мрот|сверхуроч|выплат|компенсац|льгот|"
+    r"ключ|обеспечительн|парт|цен|заявк|аванс|сч[её]т|компьютер|техник|поставщик|покупатель|"
+    r"редакц|гендиректор|генеральн\w*\s+директор|финансов\w*\s+директор|порог|сумм|одобрен|п\.\s*\d",
+    re.IGNORECASE)
+WEATHER_QUESTION = re.compile(r"(?:какая|какой|каково|что\s+с)\s+(?:сейчас\s+)?погод", re.IGNORECASE)
+SET_OFF_CLAIM = re.compile(r"может\s+зачитываться|подлежит\s+зач[её]ту|допускается\s+зач[её]т",
+                           re.IGNORECASE)
+SET_OFF_SOURCE = re.compile(r"зач[её]т|зачитыва", re.IGNORECASE)
 
 
 @dataclass
@@ -115,9 +122,13 @@ def check(parsed: verify.ModelAnswer, retrieved: Retrieved, question: str) -> li
     if numbers:
         problems.append(f"числа без подтверждения во фрагментах: {', '.join(numbers)}")
     refs = verify.unsupported_refs(parsed.text, [item.chunk.path for item in retrieved.items],
-                                   [item.chunk.text for item in retrieved.items] + [question])
+                                   [item.chunk.text for item in retrieved.items])
     if refs:
         problems.append(f"ссылки на положения, которых нет в использованных фрагментах: {', '.join(refs)}")
+    if (any(not re.search(r"не\s*$", parsed.text[max(0, match.start() - 5):match.start()], re.IGNORECASE)
+            for match in SET_OFF_CLAIM.finditer(parsed.text))
+            and not any(SET_OFF_SOURCE.search(item.chunk.text) for item in retrieved.items)):
+        problems.append("утверждение о зачёте без подтверждающего условия договора")
     if parsed.kind in ("answer", "partial", "correction") and not parsed.used and retrieved.items:
         problems.append("нет ссылок на фрагменты [F..]")
     return problems
@@ -148,11 +159,18 @@ class Engine:
     def _answer(self, dialog: Dialog, query_vector, deadline) -> Result:
         retrieved = retrieval.retrieve(self.kb, self.index, dialog, self.client, query_vector, self.top_n, deadline)
         last = dialog.last_user
+        if WEATHER_QUESTION.search(last):
+            return Result("out_of_scope", OUT_OF_SCOPE, mode="rule")
+        if re.search(r"\bGDPR\b", last, re.IGNORECASE) and not any(
+                "gdpr" in doc.text.lower() for doc in self.kb.docs):
+            return Result("refusal", REFUSAL, mode="rule")
         if retrieved.entities.unknown_numbers and not retrieved.entities.doc_ids:
             numbers = ", ".join(retrieved.entities.unknown_numbers)
             return Result("refusal", f"В базе знаний нет документа с номером {numbers}. "
                            "Проверьте номер документа или уточните вопрос.", mode="rule")
         relevant = retrieved.coverage >= MIN_COVERAGE or bool(retrieved.entities.doc_ids)
+        if not relevant and re.search(r"по памяти|без документов", last, re.IGNORECASE):
+            return Result("refusal", REFUSAL, mode="rule")
         if (not retrieved.entities.doc_ids and retrieved.coverage < OUT_OF_SCOPE_COVERAGE
                 and not LEGAL_HINT.search(" ".join(dialog.user_texts()))):
             return Result("out_of_scope", OUT_OF_SCOPE, mode="rule")

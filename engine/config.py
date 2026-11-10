@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 
 
 def env(name: str, default: str = "") -> str:
@@ -38,7 +39,9 @@ def env_float(name: str, default: float, low: float = 0.0, high: float = 2.0) ->
 
 @dataclass(frozen=True)
 class Config:
+    data_dir: Path = Path("data")
     base_url: str = ""
+    embed_base_url: str = ""
     llm_key: str = field(default="", repr=False)
     embed_key: str = field(default="", repr=False)
     rerank_key: str = field(default="", repr=False)
@@ -50,6 +53,8 @@ class Config:
     reranker_top_n: int = 8
     temperature: float = 0.0
     max_tokens: int = 1024
+    max_workers: int = 4
+    time_budget: float = 17 * 60
     request_timeout: float = 60.0
     # auto: отдельная самопроверка только при подозрительном ответе
     self_check: str = "auto"
@@ -67,11 +72,14 @@ class Config:
 def load_config() -> Config:
     base_url = env_first("LLM_BASE_URL", "OPENAI_BASE_URL", "BASE_URL").rstrip("/")
     llm_key = env_first("LLM_API_KEY", "OPENAI_API_KEY")
+    embed_base_url = env("EMBEDDER_BASE_URL").rstrip("/")
     reranker_model = env("RERANKER_MODEL")
     return Config(
+        data_dir=Path(env("DATA_DIR", "data")),
         base_url=base_url,
+        embed_base_url=embed_base_url,
         llm_key=llm_key,
-        embed_key=env("EMBEDDER_API_KEY") or llm_key,
+        embed_key=env("EMBEDDER_API_KEY") if embed_base_url else env("EMBEDDER_API_KEY") or llm_key,
         rerank_key=env("RERANKER_API_KEY") or llm_key,
         llm_model=env_first("LLM_MODEL", "OPENAI_MODEL", "GEN_MODEL"),
         emb_model=env("EMB_MODEL", "baai/bge-m3"),
@@ -82,6 +90,8 @@ def load_config() -> Config:
         reranker_top_n=max(6, env_int("RERANKER_TOP_N", 8, 1, 20)),
         temperature=env_float("TEMPERATURE", 0.0),
         max_tokens=env_int("MAX_TOKENS", 1024, 256, 8192),
+        max_workers=env_int("MAX_WORKERS", 4, 1, 8),
+        time_budget=env_float("ENGINE_TIME_BUDGET", 17 * 60, 30, 19 * 60),
         request_timeout=env_float("ENGINE_REQUEST_TIMEOUT", 60.0, 5, 180),
         self_check=env("SELF_CHECK", "auto").lower(),
         use_embeddings=env("ENGINE_EMBEDDINGS", "on").lower() != "off",

@@ -1,7 +1,9 @@
 .venv/
 __pycache__/
 *.pyc
-dist/
+dist/*
+!dist/submission.zip
+dist/_history/
 tests/data/
 test_out.txt
 dbg.txt

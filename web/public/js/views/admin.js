@@ -8,7 +8,6 @@ import { create_KnowledgeTab } from './admin-knowledge.js';
 import { create_OrganizationTab } from './admin-organization.js';
 import { create_RolesTab } from './admin-roles.js';
 import { create_SettingsTab } from './admin-settings.js';
-import { create_SourcesTab } from './admin-sources.js';
 import { create_UsersTab } from './admin-users.js';
 
 const adminTabs = [
@@ -25,7 +24,6 @@ const adminTabs = [
 	{ id: 'audit', icon: 'list', label: AdminTexts.tabAudit, permission: Permissions.auditView, create: create_AuditTab },
 	{ id: 'ai', icon: 'cpu', label: AdminTexts.tabAI, permission: Permissions.aiManage, create: create_AITab },
 	{ id: 'organization', icon: 'building', label: AdminTexts.tabOrganization, permission: Permissions.organizationManage, create: create_OrganizationTab },
-	{ id: 'sources', icon: 'download', label: AdminTexts.tabSources, permission: Permissions.sourcesManage, create: create_SourcesTab },
 	{ id: 'settings', icon: 'lock', label: AdminTexts.tabSettings, permission: Permissions.usersManage, create: create_SettingsTab },
 ];
 

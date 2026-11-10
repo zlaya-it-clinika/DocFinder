@@ -4,6 +4,7 @@
 - платформа ПСБ: локальный прокси из LLM_BASE_URL;
 - своё API (OpenRouter, vLLM и т. п.): base URL и ключ из настроек;
 - Ollama: base URL http://host:11434/v1, без ключа и без /rerank.
+- Для локальных тестов embed_base_url может направлять только эмбеддинги в Ollama.
 
 Не используем tools, response_format и прочие возможности, которых может не быть у модели.
 Ключи не логируются. Логи только в stderr.
@@ -16,6 +17,7 @@ import sys
 import threading
 import time
 from typing import Sequence
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -37,12 +39,19 @@ def log(message: str) -> None:
 class LlmClient:
     def __init__(self, cfg: Config, transport: httpx.BaseTransport | None = None):
         self.cfg = cfg
-        self._client = httpx.Client(timeout=cfg.request_timeout, transport=transport)
+        loopback = urlsplit(cfg.base_url).hostname in {"127.0.0.1", "localhost", "::1"}
+        self._client = httpx.Client(timeout=cfg.request_timeout, transport=transport, trust_env=not loopback)
+        embed_url = cfg.embed_base_url or cfg.base_url
+        embed_loopback = urlsplit(embed_url).hostname in {"127.0.0.1", "localhost", "::1"}
+        self._embed_client = (httpx.Client(timeout=cfg.request_timeout, transport=transport, trust_env=not embed_loopback)
+                              if cfg.embed_base_url else self._client)
         self._lock = threading.Lock()
         # Сервис, который упал на конфигурации (404 на эндпоинт), больше не вызываем
         self._disabled: set[str] = set()
 
     def close(self) -> None:
+        if self._embed_client is not self._client:
+            self._embed_client.close()
         self._client.close()
 
     def __enter__(self) -> "LlmClient":
@@ -52,7 +61,8 @@ class LlmClient:
         self.close()
 
     def available(self, service: str) -> bool:
-        if not self.cfg.base_url:
+        if not (self.cfg.embed_base_url if service == "embeddings" and self.cfg.embed_base_url
+                else self.cfg.base_url):
             return False
         if service == "chat" and not self.cfg.llm_model:
             return False
@@ -74,13 +84,15 @@ class LlmClient:
         headers = {"Content-Type": "application/json"}
         if key:
             headers["Authorization"] = "Bearer " + key
-        url = self.cfg.base_url + path
+        embed_request = service == "embeddings" and bool(self.cfg.embed_base_url)
+        url = (self.cfg.embed_base_url if embed_request else self.cfg.base_url) + path
+        client = self._embed_client if embed_request else self._client
         last_error = "нет попыток"
         for attempt in range(attempts):
             if deadline is not None and time.monotonic() > deadline:
                 raise ApiError("истёк бюджет времени")
             try:
-                response = self._client.post(url, headers=headers, json=payload)
+                response = client.post(url, headers=headers, json=payload)
             except httpx.HTTPError as exc:
                 last_error = type(exc).__name__
             else:

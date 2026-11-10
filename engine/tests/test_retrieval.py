@@ -59,6 +59,8 @@ class DemoRetrieval(unittest.TestCase):
         result = retrieve("10")
         names = {item.doc.display_name for item in result.items}
         self.assertFalse(any("10.01.2023" in name for name in names), names)
+        self.assertTrue(any("действующая редакция" in fact and "01.03.2025" in fact
+                            for fact in result.facts), result.facts)
 
     def test_no_topic_low_coverage(self):
         self.assertLess(retrieve("3").coverage, 0.25)

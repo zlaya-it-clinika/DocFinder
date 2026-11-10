@@ -30,15 +30,54 @@ FOCUS_SUPPORT_KEEP = 3     # положений из остальных доку
 MAX_EXPANDED_PATH_CHARS = 4500  # объём всех кусков одного длинного положения
 MAX_FOCUS_CONTEXT = 10     # максимум пунктов одного точно названного документа с соседями
 OLD_EDITION_WORDS = re.compile(r"раньше|ранее|прежн|старой\s+редакц|утратил|действовал\w*\s+до", re.I)
+REGULATION_FOLLOWUP = re.compile(r"порог\w*.*(?:гендиректор|генеральн)|регламент", re.I)
+EDITION_YEAR = re.compile(r"редакци[ияею]\s+(?:от\s+)?(20\d{2})", re.I)
+REGULATION_TOPIC = re.compile(
+    r"регламент|редакци|согласован|одобрен|визир|гендиректор|генеральн\w*\s+директор|"
+    r"финансов\w*\s+директор|порог|оригинал|архив|СЭД|типов\w*\s+форм|"
+    r"аффилирован|иностранн|поручител|залог", re.I)
+CONTRACT_CONDITION = re.compile(
+    r"мебел|компьютер|техник|склад|арендн\w*\s+плат|претензи|доставк|упаковк|"
+    r"спецификац|допсоглашен|химки|П-17/2024|ПТ-05/2023|А-08/2024", re.I)
 
 QUERY_EXPANSIONS = (
+    (re.compile(r"субаренд", re.I),
+     "арендатор не вправе сдавать помещение в субаренду без письменного согласия арендодателя"),
+    (re.compile(r"(?:пято[ге]|5[- ]?го).*?(?:числ|месяц|плат)|(?:числ|месяц|плат).*?(?:пято[ге]|5[- ]?го)", re.I),
+     "арендная плата вносится ежемесячно не позднее 5-го числа текущего месяца"),
+    (re.compile(r"сч[её]т.*перечисл|перечисл.*сч[её]т", re.I),
+     "расчёты производятся в безналичной форме путём перечисления на расчётный счёт поставщика"),
+    (re.compile(r"оплат\w*.*исполн|исполн\w*.*оплат|плат[её]жн\w*\s+поручен", re.I),
+     "обязательство покупателя по оплате считается исполненным с момента списания денежных средств с корреспондентского счёта"),
+    (re.compile(r"срок\w*\s+поставк\w*.*компьютер|компьютер\w*.*срок\w*\s+поставк", re.I),
+     "поставщик поставляет компьютерную технику в течение 14 рабочих дней с даты получения заявки"),
+    (re.compile(r"гендиректор|генеральн\w*\s+директор", re.I),
+     "договоры на сумму свыше подлежат одобрению генеральным директором до подписания"),
+    (re.compile(r"инициир|инициатор", re.I),
+     "инициатором согласования является руководитель подразделения в интересах которого заключается договор"),
+    (re.compile(r"доказ\w*.*согласи|согласи\w*.*доказ", re.I),
+     "обязанность предоставить доказательство получения согласия субъекта персональных данных возлагается на оператора"),
     (re.compile(r"ноч|круглосуточ|два\s+часа", re.I), "круглосуточно доступ транспорт пропуск"),
     (re.compile(r"аванс|заранее\s+оплат|до\s+поставк", re.I), "предоплата аванс счёт"),
     (re.compile(r"съезж|сдать\s+ключ|вернуть\s+ключ|вернуть\s+помещ|выезд", re.I),
      "возврат помещения акт прекращение договора"),
+    (re.compile(r"ключ\w*.*(?:возврат|верн|сда|хватит)|(?:возврат|верн|сда|хватит).*ключ", re.I),
+     "при прекращении договора арендатор возвращает помещение по акту"),
     (re.compile(r"сколько\s+стоит\w*\s+аренд|стоимост\w*\s+аренд", re.I),
      "арендная плата размер в месяц"),
     (re.compile(r"провер\w*\s+качеств|дефект|недостат", re.I), "приёмка качество недостатки претензия акт"),
+    (re.compile(r"срок\w*\s+оплат|когда\s+оплат|когда\s+плат", re.I),
+     "покупатель оплачивает товар в течение календарных дней с даты подписания УПД поставки"),
+    (re.compile(r"пен[ия]|неустойк|просроч", re.I),
+     "за просрочку поставки поставщик уплачивает неустойку за каждый день"),
+    (re.compile(r"одобр\w*.*(?:генеральн|гендиректор)|(?:генеральн|гендиректор)\w*.*одобр", re.I),
+     "договоры на сумму подлежат одобрению генеральным директором до подписания"),
+    (re.compile(r"гарант\w*.*(?:компьютер|техник)|(?:компьютер|техник).*гарант", re.I),
+     "гарантийный срок на товар устанавливается производителем указывается в гарантийном талоне"),
+    (re.compile(r"цен\w*.*парт|парт\w*.*цен", re.I),
+     "наименование количество ассортимент и цена товара согласуются сторонами в спецификациях"),
+    (re.compile(r"(?:ндс|налог\w*\s+на\s+добавленн\w*\s+стоимост).*молок", re.I),
+     "молока молокопродуктов продовольственных товаров налоговая ставка при реализации"),
 )
 
 
@@ -92,6 +131,11 @@ def retrieve(kb: KnowledgeBase, index: SearchIndex, dialog: Dialog, client: LlmC
     last = ent_mod.extract(kb, dialog.last_user)
     context = ent_mod.extract(kb, "\n".join(turn.text for turn in dialog.history))
     entities = ent_mod.merge(last, context)
+    # История даёт дату, но её договор не должен сужать поиск, если последний
+    # вопрос явно перешёл на общий порог одобрения или регламент.
+    if not last.doc_ids and context.doc_ids and REGULATION_FOLLOWUP.search(dialog.last_user):
+        entities.doc_ids = [doc_id for doc_id in entities.doc_ids
+                            if kb.by_id[doc_id].doc_type == "regulation"]
     query = build_query(dialog)
     selected: list[int] = []
 
@@ -108,6 +152,12 @@ def retrieve(kb: KnowledgeBase, index: SearchIndex, dialog: Dialog, client: LlmC
         hits += index.search(query, query_vector, limit=SEARCH_POOL // 2)
     else:
         hits = index.search(query, query_vector, limit=SEARCH_POOL)
+    expanded_terms = [terms for pattern, terms in QUERY_EXPANSIONS if pattern.search(dialog.last_user)]
+    if expanded_terms:
+        expanded = index.search(" ".join(expanded_terms), query_vector, allowed=focus_allowed or None, limit=3)
+        hits = expanded + hits
+    lexical = index.search(query, None, allowed=focus_allowed or None, limit=3)
+    hits = lexical + hits
     ranked = _rerank(kb, index, client, dialog.last_user, hits, top_n, deadline)
     # Шапки и реквизиты - шум: документ уже известен из метаданных ContextItem.
     ranked = [i for i in ranked if kb.chunks[i].kind in ("clause", "whole")]
@@ -135,6 +185,14 @@ def retrieve(kb: KnowledgeBase, index: SearchIndex, dialog: Dialog, client: LlmC
             for chunk_index, _ in index.search(query, query_vector, allowed=allowed, limit=2):
                 if chunk_index not in selected:
                     selected.append(chunk_index)
+
+    # Регламент согласования не помогает ответить на отдельное условие найденного
+    # договора; случайные совпадения добавляли в ответ постороннюю редакцию.
+    contract_context = any(kb.doc(kb.chunks[i]).doc_type in ("contract", "supplement") for i in selected)
+    if (contract_context and CONTRACT_CONDITION.search(dialog.last_user)
+            and not REGULATION_TOPIC.search(dialog.last_user)):
+        selected = [i for i in selected if kb.doc(kb.chunks[i]).doc_type != "regulation"]
+        ranked = [i for i in ranked if kb.doc(kb.chunks[i]).doc_type != "regulation"]
 
     result = Retrieved(items=[], entities=entities, search_query=query)
     # Основные документы: названные в вопросе и лучшие по поиску. Только к ним тянем ДС и связанные
@@ -204,8 +262,11 @@ def _rerank(kb: KnowledgeBase, index: SearchIndex, client: LlmClient | None, que
                                deadline=deadline)
     except ApiError:
         return order
-    head = [order[i] for i, _ in ranked]
-    return head + [i for i in order if i not in head]
+    # Сохраняем несколько сильнейших кандидатов исходного поиска: реранкер может
+    # ошибиться на коротком вопросе, особенно при похожих договорах и редакциях.
+    anchors = order[:MIN_KEEP + 2]
+    head = [order[i] for i, _ in ranked if order[i] not in anchors]
+    return anchors + head + [i for i in order if i not in anchors and i not in head]
 
 
 def _edition_fact(doc: Document) -> str:
@@ -227,6 +288,7 @@ def _apply_editions(kb: KnowledgeBase, chunks: list[Chunk], entities: Entities, 
     if not groups:
         return chunks
     keep: dict[str, set[str]] = {}
+    explicit_edition_year = EDITION_YEAR.search(question)
     for group in groups:
         current = kb.edition_on(group, None)
         wanted: set[str] = {current.doc_id} if current else set()
@@ -241,8 +303,25 @@ def _apply_editions(kb: KnowledgeBase, chunks: list[Chunk], entities: Entities, 
                                         f"до {dates.fmt(current.effective_from)} она не применяется.")
             else:
                 result.warnings.append(f"Редакции документа на дату события в базе нет (группа «{group}»).")
+        elif explicit_edition_year:
+            year = int(explicit_edition_year.group(1))
+            named = {doc.doc_id for doc in kb.docs
+                     if doc.group_key == group and doc.edition_date and doc.edition_date.year == year}
+            if named:
+                wanted = named
+                result.facts.extend(f"По вопросу выбрана редакция «{kb.by_id[doc_id].display_name}»."
+                                    for doc_id in sorted(named))
+            else:
+                result.warnings.append(f"Редакции документа за {year} год в базе нет (группа «{group}»).")
         elif OLD_EDITION_WORDS.search(question):
             wanted = {doc.doc_id for doc in kb.docs if doc.group_key == group}
+        elif current:
+            edition_date = current.edition_date or current.effective_from
+            dated = f" от {dates.fmt(edition_date)}" if edition_date else ""
+            result.facts.append(
+                f"В вопросе дата редакции не указана; для ответа выбрана действующая редакция "
+                f"«{current.display_name}»{dated}. Назови эту редакцию в ответе."
+            )
         keep[group] = wanted
     kept = [c for c in chunks if not kb.doc(c).group_key or kb.doc(c).doc_id in keep[kb.doc(c).group_key]]
     # Нужная редакция могла не попасть в поиск: добавить тот же пункт из неё

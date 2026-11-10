@@ -78,6 +78,12 @@ def run_cases(kb_path: Path, cases_path: Path, answers_path: Path | None = None)
             actual = engine.answer(case["question"], dialog=dialog).kind
             if actual != expected_kind:
                 problems.append(f"вид ответа {actual}, ожидался {expected_kind}")
+        elif expected_kind:
+            actual = engine.answer(case["question"], dialog=dialog).kind
+            # Без генеративной модели низкое лексическое покрытие может дать
+            # осторожный отказ; здесь проверяем ошибочную маршрутизацию темы.
+            if actual == "out_of_scope":
+                problems.append("юридический вопрос ошибочно сочтён вне компетенции")
         answer = answers.get(case["id"], "")
         if answers and not answer:
             problems.append("нет готового ответа")
@@ -125,8 +131,11 @@ def judge_once(client: LlmClient, question: str, golden: str, answer_a: str, ans
     prompt = (f"ВОПРОС:\n{question}\n\nЭТАЛОН:\n{golden}\n\nОТВЕТ A:\n{answer_a}\n\n"
               f"ОТВЕТ B:\n{answer_b}\n\nВыбери ответ, который ближе к эталону и безопаснее.")
     raw = client.chat([{"role": "system", "content": JUDGE_SYSTEM}, {"role": "user", "content": prompt}])
-    match = re.search(r"WINNER\s*:\s*(A|B|TIE)", raw, re.IGNORECASE)
-    return match.group(1).upper() if match else "TIE"
+    match = re.search(r"(?:WINNER|ВЫБОР|ПОБЕДИТЕЛЬ)\s*[:：]\s*(A|B|TIE|НИЧЬЯ)\b",
+                      raw, re.IGNORECASE)
+    if not match:
+        raise ApiError("judge: модель не указала однозначного победителя")
+    return "TIE" if match.group(1).upper() == "НИЧЬЯ" else match.group(1).upper()
 
 
 def pairwise_judge(questions_path: Path, golden_path: Path, answer_a_path: Path,

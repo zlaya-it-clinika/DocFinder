@@ -5,13 +5,14 @@ from datetime import date
 import dates
 import entities
 import formatter
+import pipeline
 import prompts
 import retrieval
 import sanitize
 import verify
 from dialog import parse_dialog
 from entities import Entities
-from tests.common import demo_questions, knowledge_base
+from tests.common import demo_questions, knowledge_base, search_index
 
 
 class DialogParsing(unittest.TestCase):
@@ -72,6 +73,7 @@ class EntityExtraction(unittest.TestCase):
         self.assertEqual(dates.event_period("подписали 15.10.2024"), (date(2024, 10, 15), date(2024, 10, 15)))
         self.assertEqual(dates.event_period("в 2023 году"), (date(2023, 1, 1), date(2023, 12, 31)))
         self.assertIsNone(dates.event_period("по договору П-17/2024 какая гарантия?"))
+        self.assertIsNone(dates.event_period("Где оформляется согласование по редакции 2025 года?"))
 
 
 class Sanitizer(unittest.TestCase):
@@ -98,6 +100,15 @@ class AnswerVerification(unittest.TestCase):
         self.assertFalse(parsed.parsed)
         self.assertEqual(parsed.used, ["F1"])
 
+    def test_unsupported_setoff_does_not_pass_as_contract_term(self):
+        found = retrieval.retrieve(knowledge_base(), search_index(),
+                                   parse_dialog("Можно ли зачесть обеспечительный платёж по аренде?"))
+        parsed = verify.parse_answer(
+            "KIND: answer\nANSWER: Обеспечительный платёж может зачитываться в счёт долга. [F1]\n"
+            "MISSING: -\nUSED: F1"
+        )
+        self.assertTrue(any("зачёте" in problem for problem in pipeline.check(parsed, found, "")))
+
     def test_numbers(self):
         sources = ["3.1. Арендная плата составляет 450 000 (четыреста пятьдесят тысяч) рублей в месяц",
                    "Вопрос: договор на 12 млн рублей в августе 2024 года"]
@@ -109,6 +120,13 @@ class AnswerVerification(unittest.TestCase):
     def test_refs(self):
         self.assertEqual(verify.unsupported_refs("см. п. 3.1 и п. 9.9", ["п. 3.1"], ["текст"]), ["п. 9.9"])
         self.assertEqual(verify.unsupported_refs("ТК РФ, ст. 70, ч. 5", ["ст. 70, ч. 5"], []), [])
+
+    def test_question_does_not_validate_invented_reference(self):
+        from pipeline import check
+        question = "Правда ли, что плата 450 000 рублей указана в п. 99.9 договора А-08/2024?"
+        found = retrieval.retrieve(knowledge_base(), search_index(), parse_dialog(question))
+        answer = verify.ModelAnswer(text="Плата указана в п. 99.9 [F1].", used=["F1"])
+        self.assertTrue(any("п. 99.9" in problem for problem in check(answer, found, question)))
 
 
 class Formatting(unittest.TestCase):
@@ -152,6 +170,13 @@ class Formatting(unittest.TestCase):
 
 
 class Prompting(unittest.TestCase):
+    def test_contract_subject_distinguishes_similar_suppliers(self):
+        kb = knowledge_base()
+        doc = kb.by_number["ПТ-05/2023"]
+        warranty = next(chunk for chunk in doc.chunks if chunk.path == "п. 6.1")
+        item = retrieval.ContextItem(label="F1", chunk=warranty, doc=doc)
+        self.assertIn("компьютерную технику", prompts.format_item(item, include_subject=True))
+
     def test_low_lexical_match_is_not_an_automatic_refusal(self):
         found = retrieval.Retrieved(items=[], entities=Entities())
         messages = prompts.build_messages("ООО «Меридиан»", "Можно ли так сделать?", "", found, False,
@@ -161,8 +186,8 @@ class Prompting(unittest.TestCase):
         self.assertNotIn("KIND: refusal", user_prompt)
 
     def test_style_forbids_unrequested_comparisons(self):
-        self.assertIn("одного-трёх предложений", prompts.SYSTEM_PROMPT)
-        self.assertIn("не пиши «для сравнения»", prompts.SYSTEM_PROMPT.lower())
+        self.assertIn("примерно в 150 слов", prompts.SYSTEM_PROMPT)
+        self.assertIn("не сравнивай с другим договором", prompts.SYSTEM_PROMPT.lower())
 
 
 if __name__ == "__main__":

@@ -28,7 +28,7 @@ class GoldenAnswersPassVerification(unittest.TestCase):
                     for item in result.items]
                 self.assertEqual(verify.unsupported_numbers(answer, sources), [], answer)
                 refs = verify.unsupported_refs(answer, [item.chunk.path for item in result.items],
-                                               [item.chunk.text for item in result.items] + [question])
+                                               [item.chunk.text for item in result.items])
                 self.assertEqual(refs, [], answer)
 
 
