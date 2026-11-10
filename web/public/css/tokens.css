@@ -1,0 +1,165 @@
+/* Цвета, размеры и шрифты. Нейтральная серая палитра в духе open-webui, акцентов почти нет. */
+
+:root {
+	color-scheme: light;
+
+	--color-bg: #ffffff;
+	--color-bg-sidebar: #f8fafc;
+	--color-bg-subtle: #f1f5f9;
+	--color-bg-hover: #e8eef7;
+	--color-bg-active: #dbe5f2;
+	--color-bg-elevated: #ffffff;
+	--color-bg-overlay: rgba(0, 0, 0, 0.32);
+
+	--color-border: #e2e8f0;
+	--color-border-strong: #cbd5e1;
+
+	--color-text: #0f172a;
+	--color-text-muted: #475569;
+	--color-text-faint: #64748b;
+
+	--color-accent: #0f172a;
+	--color-accent-hover: #1e3a8a;
+	--color-accent-text: #ffffff;
+
+	--color-focus: #1e3a8a;
+	--color-link: #1e3a8a;
+	--color-link-soft: #dbeafe;
+	--color-legal-accent: #a16207;
+
+	--color-danger: #b42318;
+	--color-danger-bg: #fdf3f2;
+	--color-warning: #8a4a0b;
+	--color-warning-bg: #fdf6ea;
+	--color-success: #1f6f43;
+	--color-success-bg: #eef7f1;
+
+	/* Метки категорий знаний: приглушённые, читаются и в светлой, и в тёмной теме */
+	--topic-gray: #8f8f8f;
+	--topic-blue: #4c7ce0;
+	--topic-green: #3f9d6b;
+	--topic-amber: #c58a1d;
+	--topic-red: #c9503f;
+	--topic-violet: #8a63d2;
+	--topic-teal: #2f9c9c;
+
+	--color-meter: #4e4e4e;
+	--color-meter-track: #e3e3e3;
+
+	--shadow-popover: 0 10px 30px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+	--shadow-input: 0 1px 4px rgba(0, 0, 0, 0.04);
+
+	--font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Liberation Mono", monospace;
+
+	--text-xs: 0.75rem;
+	--text-sm: 0.8125rem;
+	--text-base: 0.9375rem;
+	--text-md: 1rem;
+	--text-lg: 1.125rem;
+	--text-xl: 1.5rem;
+
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 14px;
+	--radius-xl: 24px;
+	--radius-pill: 9999px;
+
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 20px;
+	--space-6: 24px;
+	--space-8: 32px;
+
+	--sidebar-width: 264px;
+	--chat-width: 768px;
+	--topbar-height: 52px;
+
+	--transition-fast: 120ms ease;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		color-scheme: dark;
+
+		--color-bg: #171717;
+		--color-bg-sidebar: #0f0f0f;
+		--color-bg-subtle: #222222;
+		--color-bg-hover: #262626;
+		--color-bg-active: #333333;
+		--color-bg-elevated: #1e1e1e;
+		--color-bg-overlay: rgba(0, 0, 0, 0.6);
+
+		--color-border: #2a2a2a;
+		--color-border-strong: #3d3d3d;
+
+		--color-text: #ececec;
+		--color-text-muted: #a3a3a3;
+		--color-text-faint: #747474;
+
+		--color-accent: #ececec;
+		--color-accent-hover: #ffffff;
+		--color-accent-text: #171717;
+
+		--color-focus: #7ea2f0;
+		--color-link: #9bb8f5;
+		--color-link-soft: #172443;
+		--color-legal-accent: #f0c27a;
+
+		--color-danger: #f2a39a;
+		--color-danger-bg: #2b1a18;
+		--color-warning: #f0c27a;
+		--color-warning-bg: #2a2216;
+		--color-success: #8fd3ab;
+		--color-success-bg: #172a20;
+
+		--color-meter: #b4b4b4;
+		--color-meter-track: #333333;
+
+		--shadow-popover: 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+		--shadow-input: none;
+	}
+}
+
+:root[data-theme="dark"] {
+	color-scheme: dark;
+
+	--color-bg: #171717;
+	--color-bg-sidebar: #0f0f0f;
+	--color-bg-subtle: #222222;
+	--color-bg-hover: #262626;
+	--color-bg-active: #333333;
+	--color-bg-elevated: #1e1e1e;
+	--color-bg-overlay: rgba(0, 0, 0, 0.6);
+
+	--color-border: #2a2a2a;
+	--color-border-strong: #3d3d3d;
+
+	--color-text: #ececec;
+	--color-text-muted: #a3a3a3;
+	--color-text-faint: #747474;
+
+	--color-accent: #ececec;
+	--color-accent-hover: #ffffff;
+	--color-accent-text: #171717;
+
+	--color-focus: #7ea2f0;
+	--color-link: #9bb8f5;
+	--color-link-soft: #172443;
+	--color-legal-accent: #f0c27a;
+
+	--color-danger: #f2a39a;
+	--color-danger-bg: #2b1a18;
+	--color-warning: #f0c27a;
+	--color-warning-bg: #2a2216;
+	--color-success: #8fd3ab;
+	--color-success-bg: #172a20;
+
+	--color-meter: #b4b4b4;
+	--color-meter-track: #333333;
+
+	--shadow-popover: 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+	--shadow-input: none;
+}

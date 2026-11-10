@@ -1,0 +1,23 @@
+{
+	"title": "Инструкция по ДОУ Организации",
+	"priority": 1,
+	"rules": {
+		"marginLeftMM": {"value": 30, "ref": "п. 8.16: левое поле 30 мм"},
+		"marginRightMM": {"value": 20, "ref": "п. 8.16: правое поле не менее 20 мм"},
+		"marginTopMM": {"value": 25, "ref": "п. 8.16: верхнее поле не менее 25 мм"},
+		"marginBottomMM": {"value": 15, "ref": "п. 8.16: нижнее поле не менее 15 мм"},
+		"fontName": {"value": "Times New Roman", "ref": "п. 8.16: шрифт Times New Roman"},
+		"fontSizePt": {"value": 13, "ref": "п. 8.16: размер шрифта 13 пунктов"},
+		"textLineSpacing": {"value": 1.15, "ref": "п. 8.16: межстрочный интервал 1,15 - 1,5"},
+		"pageNumberPart": {"value": "footer", "ref": "п. 8.16: номер страницы в нижнем колонтитуле"},
+		"pageNumberAlign": {"value": "right", "ref": "п. 8.16: номер в правой части колонтитула"},
+		"pageNumberOnFirstPage": {"value": false, "ref": "п. 8.16: номер проставляется со второй страницы"},
+		"initialsSeparator": {"value": " ", "ref": "п. 8.12.1, 8.19.2: «И. И. Иванову», «И. И. Иванов»"},
+		"headerNameOrder": {"value": "initials-surname", "ref": "п. 8.12.1: «Начальнику отдела ... И. И. Иванову»"},
+		"signatureNameOrder": {"value": "initials-surname", "ref": "п. 8.19.2: «Директор департамента И. И. Иванов»"},
+		"executorNameOrder": {"value": "initials-surname", "ref": "п. 8.25: инициалы, фамилия и служебный телефон исполнителя"},
+		"executorAtPageBottom": {"value": true, "ref": "п. 8.25: в левом нижнем углу последней страницы"},
+		"committeeMemberLabel": {"value": "each", "ref": "п. 8.19.2: функция «Председатель комиссии», «Член комиссии»"},
+		"dateFormat": {"value": "DD.MM.YYYY", "ref": "п. 8.7: формат «14.10.2026»"}
+	}
+}

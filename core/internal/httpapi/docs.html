@@ -1,0 +1,779 @@
+{{define "login"}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{{.Title}}</title>
+	<style>
+		:root {
+			--ink: #1b1914;
+			--paper: #f3efe4;
+			--card: #fffdf8;
+			--line: #d8d0c2;
+			--accent: #8f3d2c;
+			--muted: #6e685f;
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			display: grid;
+			place-items: center;
+			background: var(--paper);
+			color: var(--ink);
+			font: 17px/1.45 Georgia, "Iowan Old Style", serif;
+		}
+		form, .notice {
+			width: min(420px, calc(100% - 32px));
+			background: var(--card);
+			border: 1px solid var(--line);
+			padding: 28px 24px;
+		}
+		h1 { margin: 0 0 8px; font-size: 28px; font-weight: 600; }
+		p { margin: 0 0 18px; color: var(--muted); }
+		label { display: block; margin-bottom: 6px; }
+		input {
+			width: 100%;
+			padding: 10px 12px;
+			border: 1px solid var(--line);
+			background: #fff;
+			font: 16px/1.3 ui-monospace, monospace;
+		}
+		button {
+			margin-top: 16px;
+			border: 0;
+			background: var(--accent);
+			color: #fffdf8;
+			padding: 10px 16px;
+			font: 16px/1 Georgia, serif;
+			cursor: pointer;
+		}
+		.error { color: var(--accent); }
+	</style>
+</head>
+<body>
+	{{if .PasswordSet}}
+	<form method="post" action="/docs/login">
+		<h1>{{.Heading}}</h1>
+		<p>{{.Lead}}</p>
+		{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+		<label for="password">{{.PasswordLabel}}</label>
+		<input id="password" name="password" type="password" autocomplete="current-password" required>
+		<button type="submit">{{.Submit}}</button>
+	</form>
+	{{else}}
+	<section class="notice">
+		<h1>{{.Heading}}</h1>
+		<p class="error">{{.Error}}</p>
+		<p>{{.MissingHint}}</p>
+	</section>
+	{{end}}
+</body>
+</html>
+{{end}}
+
+{{define "console"}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{{.Title}}</title>
+	<style>
+		:root {
+			--ink: #1b1914;
+			--paper: #f3efe4;
+			--card: #fffdf8;
+			--line: #d8d0c2;
+			--accent: #8f3d2c;
+			--muted: #6e685f;
+			--get: #245c48;
+			--post: #8f3d2c;
+			--patch: #8a5a12;
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			background: var(--paper);
+			color: var(--ink);
+			font: 16px/1.45 Georgia, "Iowan Old Style", serif;
+		}
+		header {
+			display: flex;
+			justify-content: space-between;
+			gap: 16px;
+			align-items: center;
+			padding: 20px 24px;
+			border-bottom: 1px solid var(--line);
+		}
+		h1 { margin: 0; font-size: 28px; font-weight: 600; }
+		header p { margin: 4px 0 0; color: var(--muted); }
+		header button, .call button {
+			border: 0;
+			background: var(--accent);
+			color: #fffdf8;
+			padding: 8px 14px;
+			font: 15px/1 Georgia, serif;
+			cursor: pointer;
+		}
+		main { width: min(920px, calc(100% - 32px)); margin: 20px auto 48px; }
+		.token {
+			background: var(--card);
+			border: 1px solid var(--line);
+			padding: 16px;
+			margin-bottom: 16px;
+		}
+		.token label { display: block; margin-bottom: 6px; }
+		.token input, .call input, .call textarea {
+			width: 100%;
+			padding: 8px 10px;
+			border: 1px solid var(--line);
+			background: #fff;
+			font: 14px/1.4 ui-monospace, monospace;
+		}
+		.call {
+			background: var(--card);
+			border: 1px solid var(--line);
+			padding: 16px;
+			margin-top: 12px;
+		}
+		.call h2 { margin: 0; font-size: 18px; }
+		.method {
+			display: inline-block;
+			min-width: 64px;
+			margin-right: 8px;
+			color: #fffdf8;
+			text-align: center;
+			font: 12px/1.6 ui-monospace, monospace;
+		}
+		.method.get { background: var(--get); }
+		.method.post { background: var(--post); }
+		.method.patch { background: var(--patch); }
+		.method.delete { background: #5c2d3a; }
+		.hint { margin: 8px 0 12px; color: var(--muted); }
+		.fields { display: grid; gap: 8px; margin-bottom: 12px; }
+		.result {
+			margin-top: 12px;
+			padding: 10px;
+			background: #1b1914;
+			color: #f3efe4;
+			white-space: pre-wrap;
+			word-break: break-word;
+			font: 13px/1.45 ui-monospace, monospace;
+		}
+		.result:empty { display: none; }
+	</style>
+</head>
+<body data-file-prefix="{{.FilePrefix}}" data-file-suffix="{{.FileSuffix}}">
+	<header>
+		<div>
+			<h1>{{.Title}}</h1>
+			<p>{{.Lead}}</p>
+		</div>
+		<form method="post" action="/docs/logout">
+			<button type="submit">{{.Logout}}</button>
+		</form>
+	</header>
+	<main>
+		<section class="token">
+			<label for="api-token">{{.TokenLabel}}</label>
+			<input id="api-token" autocomplete="off" placeholder="{{.TokenPlaceholder}}">
+		</section>
+
+		<form class="call" data-method="POST" data-auth="no" data-capture="token">
+			<h2><span class="method post">POST</span>/auth/login</h2>
+			<p class="hint">{{.HintLogin}}</p>
+			<input name="path" value="/auth/login">
+			<textarea name="body" rows="4">{{.ExampleLoginBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/auth/logout</h2>
+			<p class="hint">{{.HintLogout}}</p>
+			<input name="path" value="/auth/logout">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET" data-auth="no">
+			<h2><span class="method get">GET</span>/auth/config</h2>
+			<p class="hint">{{.HintAuthConfig}}</p>
+			<input name="path" value="/auth/config">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-auth="no" data-capture="token">
+			<h2><span class="method post">POST</span>/auth/signup</h2>
+			<p class="hint">{{.HintSignup}}</p>
+			<input name="path" value="/auth/signup">
+			<textarea name="body" rows="5">{{.ExampleSignupBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-auth="no" data-capture="token">
+			<h2><span class="method post">POST</span>/auth/ldap</h2>
+			<p class="hint">{{.HintLdapLogin}}</p>
+			<input name="path" value="/auth/ldap">
+			<textarea name="body" rows="4">{{.ExampleLdapLoginBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-auth="negotiate" data-capture="token">
+			<h2><span class="method post">POST</span>/auth/kerberos</h2>
+			<p class="hint">{{.HintKerberosLogin}}</p>
+			<input name="path" value="/auth/kerberos">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/auth/admin/details</h2>
+			<p class="hint">{{.HintAdminDetails}}</p>
+			<input name="path" value="/auth/admin/details">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/auth/admin/config</h2>
+			<p class="hint">{{.HintSignupConfig}}</p>
+			<input name="path" value="/auth/admin/config">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/auth/admin/config</h2>
+			<p class="hint">{{.HintSaveSignup}}</p>
+			<input name="path" value="/auth/admin/config">
+			<textarea name="body" rows="5">{{.ExampleSignupConfig}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/auth/admin/config/ldap</h2>
+			<p class="hint">{{.HintLdapToggle}}</p>
+			<input name="path" value="/auth/admin/config/ldap">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/auth/admin/config/ldap</h2>
+			<p class="hint">{{.HintSaveLdapToggle}}</p>
+			<input name="path" value="/auth/admin/config/ldap">
+			<textarea name="body" rows="3">{{.ExampleLdapToggle}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/auth/admin/config/ldap/server</h2>
+			<p class="hint">{{.HintLdapServer}}</p>
+			<input name="path" value="/auth/admin/config/ldap/server">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/auth/admin/config/ldap/server</h2>
+			<p class="hint">{{.HintSaveLdapServer}}</p>
+			<input name="path" value="/auth/admin/config/ldap/server">
+			<textarea name="body" rows="16">{{.ExampleLdapServer}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/me</h2>
+			<p class="hint">{{.HintMe}}</p>
+			<input name="path" value="/me">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-capture="session">
+			<h2><span class="method post">POST</span>/sessions</h2>
+			<p class="hint">{{.HintCreateSession}}</p>
+			<input name="path" value="/sessions">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/sessions</h2>
+			<p class="hint">{{.HintListSessions}}</p>
+			<input name="path" value="/sessions">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="PATCH">
+			<h2><span class="method patch">PATCH</span>/sessions/{sessionId}</h2>
+			<p class="hint">{{.HintRenameSession}}</p>
+			<input name="path" value="/sessions/session-1" data-session-template="/sessions/{id}">
+			<textarea name="body" rows="3">{{.ExampleRenameSessionBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="DELETE">
+			<h2><span class="method delete">DELETE</span>/sessions/{sessionId}</h2>
+			<p class="hint">{{.HintDeleteSession}}</p>
+			<input name="path" value="/sessions/session-1" data-session-template="/sessions/{id}">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/sessions/{sessionId}</h2>
+			<p class="hint">{{.HintHistory}}</p>
+			<input name="path" value="/sessions/session-1" data-session-template="/sessions/{id}">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-capture="reply">
+			<h2><span class="method post">POST</span>/sessions/{sessionId}/messages</h2>
+			<p class="hint">{{.HintMessage}}</p>
+			<input name="path" value="/sessions/session-1/messages" data-session-template="/sessions/{id}/messages">
+			<textarea name="body" rows="3">{{.ExampleMessageBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-upload="file">
+			<h2><span class="method post">POST</span>/sessions/{sessionId}/attachments</h2>
+			<p class="hint">{{.HintAttach}}</p>
+			<input name="path" value="/sessions/session-1/attachments" data-session-template="/sessions/{id}/attachments">
+			<div class="fields">
+				<input type="file" name="file">
+			</div>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/documents</h2>
+			<p class="hint">{{.HintListDocuments}}</p>
+			<input name="path" value="/documents">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-upload="file" data-capture="document">
+			<h2><span class="method post">POST</span>/documents</h2>
+			<p class="hint">{{.HintUpload}}</p>
+			<input name="path" value="/documents">
+			<div class="fields">
+				<input type="file" name="file">
+				<input data-field name="title" placeholder="title">
+				<input data-field name="edition" placeholder="edition" value="1.0">
+				<input data-field name="scope" placeholder="scope">
+				<input data-field name="process" placeholder="process">
+				<input data-field name="accessLevel" placeholder="accessLevel" value="1">
+				<input data-field name="roleIds" placeholder="roleIds">
+			</div>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-upload="file">
+			<h2><span class="method post">POST</span>/documents/import</h2>
+			<p class="hint">{{.HintImport}}</p>
+			<input name="path" value="/documents/import">
+			<div class="fields">
+				<input data-field name="path" placeholder="path">
+				<input data-field name="process" placeholder="process">
+				<input data-field name="edition" placeholder="edition" value="1.0">
+				<input data-field name="scope" placeholder="scope">
+				<input data-field name="accessLevel" placeholder="accessLevel" value="1">
+				<input data-field name="roleIds" placeholder="roleIds">
+			</div>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/documents/{documentId}/file</h2>
+			<p class="hint">{{.HintFile}}</p>
+			<input name="path" value="/documents/doc-1/file" data-document-template="/documents/{id}/file">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/documents/{documentId}/editions</h2>
+			<p class="hint">{{.HintEditions}}</p>
+			<input name="path" value="/documents/doc-1/editions" data-document-template="/documents/{id}/editions">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/documents/{documentId}/editions/{editionId}/file</h2>
+			<p class="hint">{{.HintEditionFile}}</p>
+			<input name="path" value="/documents/doc-1/editions/1/file">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="DELETE">
+			<h2><span class="method delete">DELETE</span>/documents/{documentId}</h2>
+			<p class="hint">{{.HintDeleteDocument}}</p>
+			<input name="path" value="/documents/doc-1" data-document-template="/documents/{id}">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/sources</h2>
+			<p class="hint">{{.HintSources}}</p>
+			<input name="path" value="/sources">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/sources/kinds</h2>
+			<p class="hint">{{.HintSourceKinds}}</p>
+			<input name="path" value="/sources/kinds">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/sources</h2>
+			<p class="hint">{{.HintCreateSource}}</p>
+			<input name="path" value="/sources">
+			<textarea name="body" rows="6">{{.ExampleCreateSourceBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="PATCH">
+			<h2><span class="method patch">PATCH</span>/sources/{sourceId}</h2>
+			<p class="hint">{{.HintPatchSource}}</p>
+			<input name="path" value="/sources/source-1">
+			<textarea name="body" rows="4">{"enabled": true}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="DELETE">
+			<h2><span class="method delete">DELETE</span>/sources/{sourceId}</h2>
+			<p class="hint">{{.HintDeleteSource}}</p>
+			<input name="path" value="/sources/source-1">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/sources/{sourceId}/verify</h2>
+			<p class="hint">{{.HintVerifySource}}</p>
+			<input name="path" value="/sources/source-1/verify">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/sources/{sourceId}/sync</h2>
+			<p class="hint">{{.HintSyncSource}}</p>
+			<input name="path" value="/sources/source-1/sync">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/sources/{sourceId}/runs</h2>
+			<p class="hint">{{.HintSourceRuns}}</p>
+			<input name="path" value="/sources/source-1/runs">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/processes</h2>
+			<p class="hint">{{.HintProcesses}}</p>
+			<input name="path" value="/processes">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/processes</h2>
+			<p class="hint">{{.HintCreateProcess}}</p>
+			<input name="path" value="/processes">
+			<textarea name="body" rows="6">{{.ExampleCreateProcessBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/blanks/{blankId}/file</h2>
+			<p class="hint">{{.HintBlankFile}}</p>
+			<input name="path" value="/blanks/order-work-group/file" data-blank-path>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/drafts/{draftId}/file</h2>
+			<p class="hint">{{.HintDraftFile}}</p>
+			<input name="path" value="/drafts/draft-1/file" data-draft-path>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/permissions</h2>
+			<p class="hint">{{.HintPermissions}}</p>
+			<input name="path" value="/permissions">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/roles</h2>
+			<p class="hint">{{.HintRoles}}</p>
+			<input name="path" value="/roles">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/roles</h2>
+			<p class="hint">{{.HintCreateRole}}</p>
+			<input name="path" value="/roles">
+			<textarea name="body" rows="6">{{.ExampleCreateRoleBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="PATCH">
+			<h2><span class="method patch">PATCH</span>/roles/{roleId}</h2>
+			<p class="hint">{{.HintPatchRole}}</p>
+			<input name="path" value="/roles/role-1">
+			<textarea name="body" rows="6">{{.ExamplePatchRoleBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="DELETE">
+			<h2><span class="method delete">DELETE</span>/roles/{roleId}</h2>
+			<p class="hint">{{.HintDeleteRole}}</p>
+			<input name="path" value="/roles/role-1">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/users</h2>
+			<p class="hint">{{.HintUsers}}</p>
+			<input name="path" value="/users">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST">
+			<h2><span class="method post">POST</span>/users</h2>
+			<p class="hint">{{.HintCreateUser}}</p>
+			<input name="path" value="/users">
+			<textarea name="body" rows="6">{{.ExampleCreateUserBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="PATCH">
+			<h2><span class="method patch">PATCH</span>/users/{userId}</h2>
+			<p class="hint">{{.HintPatchUser}}</p>
+			<input name="path" value="/users/user-1">
+			<textarea name="body" rows="4">{{.ExamplePatchUserBody}}</textarea>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="DELETE">
+			<h2><span class="method delete">DELETE</span>/users/{userId}</h2>
+			<p class="hint">{{.HintDeleteUser}}</p>
+			<input name="path" value="/users/user-2">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/audit/permissions</h2>
+			<p class="hint">{{.HintPermissionAudit}}</p>
+			<input name="path" value="/audit/permissions">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="GET">
+			<h2><span class="method get">GET</span>/audit</h2>
+			<p class="hint">{{.HintAudit}}</p>
+			<input name="path" value="/audit">
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-upload="file">
+			<h2><span class="method post">POST</span>/drafts/check</h2>
+			<p class="hint">{{.HintDraft}}</p>
+			<input name="path" value="/drafts/check">
+			<div class="fields">
+				<input type="file" name="file">
+			</div>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+
+		<form class="call" data-method="POST" data-upload="file">
+			<h2><span class="method post">POST</span>/drafts/fix</h2>
+			<p class="hint">{{.HintDraftFix}}</p>
+			<input name="path" value="/drafts/fix">
+			<div class="fields">
+				<input type="file" name="file">
+			</div>
+			<button type="submit">{{.Send}}</button>
+			<pre class="result"></pre>
+		</form>
+	</main>
+	<script>
+		const tokenInput = document.querySelector("#api-token")
+
+		document.querySelectorAll(".call").forEach((form) => {
+			form.addEventListener("submit", (event) => {
+				event.preventDefault()
+				sendCall(form)
+			})
+		})
+
+		async function sendCall(form) {
+			const result = form.querySelector(".result")
+			const path = form.querySelector("[name=path]").value
+			const headers = {}
+			if (form.dataset.auth === "negotiate") {
+				if (tokenInput.value.trim() !== "") {
+					headers.Authorization = "Negotiate " + tokenInput.value.trim()
+				}
+			} else if (form.dataset.auth !== "no" && tokenInput.value.trim() !== "") {
+				headers.Authorization = "Bearer " + tokenInput.value.trim()
+			}
+			let body
+			if (form.dataset.upload === "file") {
+				body = new FormData()
+				const file = form.querySelector("input[type=file]")
+				if (file && file.files[0]) {
+					body.append("file", file.files[0])
+				}
+				form.querySelectorAll("[data-field]").forEach((input) => {
+					body.append(input.name, input.value)
+				})
+			} else {
+				const raw = form.querySelector("[name=body]")
+				if (raw && raw.value.trim() !== "") {
+					headers["Content-Type"] = "application/json"
+					body = raw.value
+				}
+			}
+			try {
+				const response = await fetch(path, { method: form.dataset.method, headers, body })
+				const payload = await readPayload(response)
+				result.textContent = response.status + " " + response.statusText + "\n" + payload.text
+				if (form.dataset.capture === "token") {
+					rememberToken(payload.text)
+				}
+				if (form.dataset.capture === "session") {
+					rememberSession(payload.text)
+				}
+				if (form.dataset.capture === "document") {
+					rememberDocument(payload.text)
+				}
+				if (form.dataset.capture === "reply") {
+					rememberReply(payload.text)
+				}
+			} catch (err) {
+				result.textContent = String(err)
+			}
+		}
+
+		async function readPayload(response) {
+			const type = response.headers.get("content-type") || ""
+			if (type.includes("json") || type.includes("text") || type.includes("xml") || type === "") {
+				return { text: await response.text() }
+			}
+			const blob = await response.blob()
+			return { text: document.body.dataset.filePrefix + blob.size + document.body.dataset.fileSuffix }
+		}
+
+		function rememberToken(text) {
+			try {
+				const data = JSON.parse(text)
+				if (data.token) {
+					tokenInput.value = data.token
+				}
+			} catch (err) {
+				return
+			}
+		}
+
+		function rememberDocument(text) {
+			try {
+				const data = JSON.parse(text)
+				if (!data.documentId) {
+					return
+				}
+				document.querySelectorAll("[data-document-template]").forEach((input) => {
+					input.value = input.dataset.documentTemplate.replace("{id}", data.documentId)
+				})
+			} catch (err) {
+				return
+			}
+		}
+
+		function rememberReply(text) {
+			try {
+				const data = JSON.parse(text)
+				const template = data.template || {}
+				if (template.fileLink) {
+					const blankPath = document.querySelector("[data-blank-path]")
+					if (blankPath) {
+						blankPath.value = template.fileLink
+					}
+				}
+				if (template.draftLink) {
+					const draftPath = document.querySelector("[data-draft-path]")
+					if (draftPath) {
+						draftPath.value = template.draftLink
+					}
+				}
+			} catch (err) {
+				return
+			}
+		}
+
+		function rememberSession(text) {
+			try {
+				const data = JSON.parse(text)
+				if (!data.sessionId) {
+					return
+				}
+				document.querySelectorAll("[data-session-template]").forEach((input) => {
+					input.value = input.dataset.sessionTemplate.replace("{id}", data.sessionId)
+				})
+			} catch (err) {
+				return
+			}
+		}
+	</script>
+</body>
+</html>
+{{end}}

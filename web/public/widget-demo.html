@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Пример подключения виджета</title>
+	<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+	<link rel="icon" href="/logo-192.png" sizes="192x192" type="image/png">
+	<link rel="apple-touch-icon" href="/logo-192.png">
+	<link rel="stylesheet" href="/css/tokens.css">
+	<link rel="stylesheet" href="/css/base.css">
+	<link rel="stylesheet" href="/css/demo.css">
+	<!-- Так виджет подключается на странице внутреннего портала -->
+	<script src="/widget.js" defer></script>
+</head>
+<body>
+	<main class="demo-page">
+		<p class="demo-label">Демонстрация подключения</p>
+		<h1 class="demo-title">Страница внутреннего портала</h1>
+		<p class="demo-text">Это тестовая страница. Кнопка помощника в правом нижнем углу открывает чат DocFinder во встроенном окне. На реальном портале достаточно одной строки:</p>
+		<pre class="demo-code">&lt;script src="https://адрес-веба-docfinder/widget.js" defer&gt;&lt;/script&gt;</pre>
+		<p class="demo-text">Если портал работает на другом домене, его адрес добавляется в EMBED_ALLOWED_ORIGINS, а cookie переводятся в режим SameSite=None и Secure через HTTPS.</p>
+	</main>
+</body>
+</html>

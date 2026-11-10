@@ -1,0 +1,16 @@
+{
+	"name": "docfinder-web",
+	"version": "0.1.0",
+	"private": true,
+	"license": "MIT",
+	"description": "Страница чата и попап-виджет DocFinder. Node.js без внешних зависимостей.",
+	"type": "module",
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"start": "node server/index.js",
+		"dev": "node --watch-path=server --watch-preserve-output server/index.js",
+		"check": "node --test test/*.test.js"
+	}
+}

@@ -1,0 +1,33 @@
+/* Демо-страница подключения виджета. */
+
+.demo-page {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 64px var(--space-4);
+}
+
+.demo-label {
+	color: var(--color-text-faint);
+	font-size: var(--text-sm);
+}
+
+.demo-title {
+	font-size: 1.75rem;
+	font-weight: 600;
+}
+
+.demo-text {
+	color: var(--color-text-muted);
+}
+
+.demo-code {
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-md);
+	background: var(--color-bg-subtle);
+	font-family: var(--font-mono);
+	font-size: var(--text-sm);
+	overflow-x: auto;
+}

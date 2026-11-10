@@ -1,0 +1,30 @@
+{
+	"title": "ГОСТ Р 7.0.97-2025",
+	"priority": 2,
+	"rules": {
+		"pageWidthMM": {"value": 210, "ref": "п. 6.1: формат A4"},
+		"pageHeightMM": {"value": 297, "ref": "п. 6.1: формат A4"},
+		"marginLeftMM": {"value": 20, "ref": "п. 6.1: левое поле не менее 20 мм"},
+		"marginRightMM": {"value": 10, "ref": "п. 6.1: правое поле не менее 10 мм"},
+		"marginTopMM": {"value": 20, "ref": "п. 6.1: верхнее поле не менее 20 мм"},
+		"marginBottomMM": {"value": 20, "ref": "п. 6.1: нижнее поле не менее 20 мм"},
+		"fontName": {"value": "Times New Roman", "ref": "п. 3.3: шрифт Times New Roman"},
+		"fontSizePt": {"value": 14, "ref": "п. 3.3: размер шрифта 12-14"},
+		"textLineSpacing": {"value": 1, "ref": "п. 3.4: текст через 1-1,5 интервала"},
+		"requisiteLineSpacing": {"value": 1, "ref": "п. 3.4: реквизиты из нескольких строк через один интервал"},
+		"firstLineIndentMM": {"value": 12.5, "ref": "п. 3.4: абзацный отступ 1,25 см"},
+		"textAlign": {"value": "both", "ref": "п. 3.5: текст выравнивается по ширине"},
+		"addresseeZoneMM": {"value": 80, "ref": "п. 3.5, 5.15: адресат справа в зоне до 8 см"},
+		"pageNumberPart": {"value": "header", "ref": "п. 3.2: номер страницы посередине верхнего поля"},
+		"pageNumberAlign": {"value": "center", "ref": "п. 3.2: номер страницы посередине верхнего поля"},
+		"pageNumberOnFirstPage": {"value": false, "ref": "п. 3.2: нумеруются вторая и последующие страницы"},
+		"headerFooterDistanceMM": {"value": 10, "ref": "п. 3.2: номер страницы в 10 мм от края листа"},
+		"initialsSeparator": {"value": "", "ref": "п. 5.22: «И.О. Фамилия», между инициалами пробела нет"},
+		"headerNameOrder": {"value": "surname-initials", "ref": "п. 5.15: должность и фамилия с инициалами в дательном падеже"},
+		"signatureNameOrder": {"value": "initials-surname", "ref": "п. 5.22: «И.О. Фамилия»"},
+		"executorNameOrder": {"value": "as-is", "ref": "п. 5.26: фамилия, имя, отчество или инициалы и фамилия исполнителя"},
+		"executorAtPageBottom": {"value": true, "ref": "п. 5.26: в левом нижнем углу последнего листа"},
+		"committeeMemberLabel": {"value": "group", "ref": "п. 5.22: «Председатель комиссии», ниже «Члены комиссии»"},
+		"dateFormat": {"value": "DD.MM.YYYY", "ref": "п. 5.10: цифровой формат ДД.ММ.ГГГГ"}
+	}
+}

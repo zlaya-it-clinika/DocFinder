@@ -1,0 +1,19 @@
+{
+	"title": "Значения шаблона DocFinder",
+	"priority": 100,
+	"rules": {
+		"smallFontSizePt": {"value": 12, "ref": "шаблон: отметка об исполнителе шрифтом меньше основного"},
+		"emblemHeightMM": {"value": 18, "ref": "шаблон: высота герба на бланке"},
+		"stampMaxWidthMM": {"value": 75, "ref": "шаблон: наибольшая ширина штампа"},
+		"stampMaxHeightMM": {"value": 35, "ref": "шаблон: наибольшая высота штампа"},
+		"letterAddresseeIndentMM": {"value": 10, "ref": "шаблон: отступ адресата в правой колонке углового бланка"},
+		"letterDateSpaceMM": {"value": 2, "ref": "шаблон: отступ даты под штампом углового бланка"},
+		"typeTitleSpaceMM": {"value": 4, "ref": "шаблон: отступ вида документа под гербом"},
+		"dateLineSpaceMM": {"value": 4, "ref": "шаблон: отступ даты под видом документа"},
+		"titleSpaceMM": {"value": 6, "ref": "шаблон: отступ заголовка к тексту"},
+		"greetingSpaceMM": {"value": 2, "ref": "шаблон: отступ обращения в письме"},
+		"firstSignatureSpaceMM": {"value": 10, "ref": "шаблон: отступ первой подписи от текста"},
+		"signatureGapMM": {"value": 3, "ref": "шаблон: расстояние между подписями"},
+		"executorSpaceMM": {"value": 20, "ref": "шаблон: отступ отметки об исполнителе, если она идет сразу за подписью"}
+	}
+}

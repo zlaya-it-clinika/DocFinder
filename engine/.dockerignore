@@ -1,0 +1,13 @@
+.venv
+__pycache__
+*.pyc
+tests
+dist
+cache
+debug_*.py
+*.txt
+!requirements.txt
+*.npz
+.env
+.gitignore
+Dockerfile

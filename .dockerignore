@@ -1,0 +1,9 @@
+.git
+.env
+**/.env
+**/.env.*
+**/__pycache__
+**/*.pyc
+engine/.venv
+engine/dist
+engine/test_out.txt

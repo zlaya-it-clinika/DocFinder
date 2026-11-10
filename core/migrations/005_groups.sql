@@ -1,0 +1,1 @@
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS ldap_group text NOT NULL DEFAULT '';

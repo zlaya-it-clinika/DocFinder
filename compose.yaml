@@ -1,0 +1,175 @@
+name: docfinder
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-docs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-docfinder}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  engine:
+    build: ./engine
+    image: docfinder-engine:local
+    environment:
+      DEBUG: ${DEBUG:-false}
+      ENGINE_HOST: 0.0.0.0
+      ENGINE_PORT: "8000"
+      ENGINE_TOKEN: ${ENGINE_TOKEN:?ENGINE_TOKEN is required}
+      ENGINE_KB_PATH: /kb
+      ENGINE_CACHE_DIR: /cache
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://ollama:11434/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:7b}
+      EMB_MODEL: ${EMB_MODEL:-bge-m3}
+      RERANKER_MODEL: ${RERANKER_MODEL:-}
+      TEMPERATURE: ${TEMPERATURE:-0}
+      MAX_TOKENS: ${MAX_TOKENS:-1200}
+    volumes:
+      - ./knowledge-base:/kb:ro
+      - engine-cache:/cache
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  api:
+    build: ./core
+    image: docfinder-api:local
+    environment:
+      API_MODE: ${API_MODE:-live}
+      API_PORT: "8080"
+      DEBUG: ${DEBUG:-false}
+      DOCS_PASSWORD: ${DOCS_PASSWORD:?DOCS_PASSWORD is required}
+      DATABASE_URL: postgres://${POSTGRES_USER:-docs}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-docfinder}?sslmode=disable
+      ENGINE_URL: http://engine:8000
+      ENGINE_TOKEN: ${ENGINE_TOKEN:?ENGINE_TOKEN is required}
+      AI_PROVIDER: ${AI_PROVIDER:-ollama}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      EMB_MODEL: ${EMB_MODEL:-bge-m3}
+      RERANKER_MODEL: ${RERANKER_MODEL:-}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen2.5:7b}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-bge-m3}
+      OLLAMA_EMBED_DIMENSIONS: ${OLLAMA_EMBED_DIMENSIONS:-1024}
+      STANDARD_DOCS_DIR: /app/standard-docs
+      ENABLE_SIGNUP: ${ENABLE_SIGNUP:-true}
+      DEFAULT_USER_ROLE: ${DEFAULT_USER_ROLE:-pending}
+      SHOW_ADMIN_DETAILS: ${SHOW_ADMIN_DETAILS:-true}
+      ENABLE_LDAP: ${ENABLE_LDAP:-false}
+      LDAP_SERVER_LABEL: ${LDAP_SERVER_LABEL:-LDAP}
+      LDAP_SERVER_HOST: ${LDAP_SERVER_HOST:-}
+      LDAP_SERVER_PORT: ${LDAP_SERVER_PORT:-}
+      LDAP_APP_DN: ${LDAP_APP_DN:-}
+      LDAP_APP_PASSWORD: ${LDAP_APP_PASSWORD:-}
+      LDAP_ATTRIBUTE_FOR_USERNAME: ${LDAP_ATTRIBUTE_FOR_USERNAME:-sAMAccountName}
+      LDAP_ATTRIBUTE_FOR_MAIL: ${LDAP_ATTRIBUTE_FOR_MAIL:-mail}
+      LDAP_SEARCH_BASE: ${LDAP_SEARCH_BASE:-}
+      LDAP_SEARCH_FILTERS: ${LDAP_SEARCH_FILTERS:-}
+      LDAP_USE_TLS: ${LDAP_USE_TLS:-false}
+      LDAP_VALIDATE_CERT: ${LDAP_VALIDATE_CERT:-true}
+      ENABLE_LDAP_GROUP_MANAGEMENT: ${ENABLE_LDAP_GROUP_MANAGEMENT:-false}
+      LDAP_ATTRIBUTE_FOR_GROUPS: ${LDAP_ATTRIBUTE_FOR_GROUPS:-memberOf}
+    volumes:
+      - ./knowledge-base:/app/standard-docs:ro
+    ports:
+      - "127.0.0.1:${API_PORT_LOCAL:-8080}:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    image: docfinder-web:local
+    environment:
+      DEBUG: ${DEBUG:-false}
+      WEB_HOST: 0.0.0.0
+      WEB_PORT: "3000"
+      CORE_API_URL: http://api:8080
+      CORE_TIMEOUT_MS: ${CORE_TIMEOUT_MS:-120000}
+      ADMIN_ACCESS_LEVEL: ${ADMIN_ACCESS_LEVEL:-2}
+      USER_ACCESS_LEVEL: ${USER_ACCESS_LEVEL:-1}
+      SESSION_TTL_MINUTES: ${SESSION_TTL_MINUTES:-480}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-Lax}
+      EMBED_ALLOWED_ORIGINS: ${EMBED_ALLOWED_ORIGINS:-}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-20}
+      ALLOWED_UPLOAD_EXTENSIONS: ${ALLOWED_UPLOAD_EXTENSIONS:-.txt .pdf .docx}
+      LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-10}
+      LOGIN_WINDOW_MINUTES: ${LOGIN_WINDOW_MINUTES:-15}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:0.12.9
+    profiles: ["ollama"]
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  ollama-models:
+    image: ollama/ollama:0.12.9
+    profiles: ["ollama"]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-bge-m3}
+      CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen2.5:7b}
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["ollama pull \"$$EMBED_MODEL\" && ollama pull \"$$CHAT_MODEL\""]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres-data:
+  engine-cache:
+  ollama-models:

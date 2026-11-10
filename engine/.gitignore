@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+dist/
+tests/data/
+test_out.txt
+dbg.txt
+pip.log
+pip.err
+*.tmp.npz
+kb_vectors.npz
+.env
+.env.*
+!.env.example
